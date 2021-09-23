@@ -1,40 +1,61 @@
-# ACME webhook example
+# Porkbun Webhook solver for Cert Manager
 
-The ACME issuer type supports an optional 'webhook' solver, which can be used
-to implement custom DNS01 challenge solving logic.
+This is an unofficial webhook solver for [Cert Manager](https://cert-manager.io/) and [Porkbun](https://porkbun.com/).
 
-This is useful if you need to use cert-manager with a DNS provider that is not
-officially supported in cert-manager core.
+## Usage
 
-## Why not in core?
+1. Deploy the webhook:
 
-As the project & adoption has grown, there has been an influx of DNS provider
-pull requests to our core codebase. As this number has grown, the test matrix
-has become un-maintainable and so, it's not possible for us to certify that
-providers work to a sufficient level.
+    ```
+    helm install porkbun-webhook ./deploy/porkbun-webhook \
+        --set groupName=<your group>
+    ```
 
-By creating this 'interface' between cert-manager and DNS providers, we allow
-users to quickly iterate and test out new integrations, and then packaging
-those up themselves as 'extensions' to cert-manager.
+2. Create a secret containing your [API key](https://porkbun.com/account/api):
 
-We can also then provide a standardised 'testing framework', or set of
-conformance tests, which allow us to validate the a DNS provider works as
-expected.
+    ```
+    kubectl create secret generic porkbun-key \
+        --from-literal=api-key=<your key> \
+        --from-literal=secret-key=<your key>
+    ```
 
-## Creating your own webhook
+3. Create a role and role binding:
 
-Webhook's themselves are deployed as Kubernetes API services, in order to allow
-administrators to restrict access to webhooks with Kubernetes RBAC.
+    ```
+    kubectl apply -f rbac.yaml
+    ```
 
-This is important, as otherwise it'd be possible for anyone with access to your
-webhook to complete ACME challenge validations and obtain certificates.
+4. Configure a certificate issuer:
 
-To make the set up of these webhook's easier, we provide a template repository
-that can be used to get started quickly.
+    ```yaml
+    apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: letsencrypt
+    spec:
+      acme:
+        server: https://acme-v02.api.letsencrypt.org/directory
+        email: <your e-mail>
+        privateKeySecretRef:
+          name: letsencrypt-key
+        solvers:
+          - selector:
+              dnsZones:
+                - <your domain>
+            dns01:
+              webhook:
+                groupName: <your group>
+                solverName: porkbun
+                config:
+                  apiKeySecretRef:
+                    name: porkbun-key
+                    key: api-key
+                  secretKeySecretRef:
+                    name: porkbun-key
+                    key: secret-key
+    ```
 
-### Creating your own repository
-
-### Running the test suite
+## Running the test suite
 
 All DNS providers **must** run the DNS01 provider conformance testing suite,
 else they will have undetermined behaviour when used with cert-manager.
@@ -42,13 +63,10 @@ else they will have undetermined behaviour when used with cert-manager.
 **It is essential that you configure and run the test suite when creating a
 DNS01 webhook.**
 
-An example Go test file has been provided in [main_test.go](https://github.com/jetstack/cert-manager-webhook-example/blob/master/main_test.go).
+To run the tests, first put your api key into testdata/porkbun-solver/porkbun-secret.yaml.
 
-You can run the test suite with:
+Then you can run the test suite with:
 
 ```bash
-$ TEST_ZONE_NAME=example.com. make test
+TEST_ZONE_NAME=<your domain>. make test
 ```
-
-The example file has a number of areas you must fill in and replace with your
-own options in order for tests to pass.
