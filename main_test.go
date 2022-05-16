@@ -23,8 +23,10 @@ func TestRunsSuite(t *testing.T) {
 		dns.SetResolvedZone(zone),
 		dns.SetAllowAmbientCredentials(false),
 		dns.SetManifestPath("testdata/porkbun-solver"),
-		dns.SetBinariesPath("_test/kubebuilder/bin"),
 	)
+	//need to uncomment and  RunConformance delete runBasic and runExtended once https://github.com/cert-manager/cert-manager/pull/4835 is merged
+	//fixture.RunConformance(t)
+	fixture.RunBasic(t)
+	fixture.RunExtended(t)
 
-	fixture.RunConformance(t)
 }
