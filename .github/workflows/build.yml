@@ -45,3 +45,6 @@ jobs:
         push: true
         tags: ${{ env.IMAGE_REGISTRY }}/porkbun-webhook:${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          DOCKER_METADATA_OUTPUT_JSON
+    
