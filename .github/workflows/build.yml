@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    tags: [ 'v*' ]
+    tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ main ]
 env:
@@ -42,5 +42,5 @@ jobs:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: ${{ env.IMAGE_REGISTRY }}/porkbun-webhook:${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
