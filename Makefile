@@ -30,7 +30,7 @@ clean-kubebuilder:
 	rm -Rf _test/kubebuilder
 
 build:
-	podman build -t "$(IMAGE_NAME):$(IMAGE_TAG)" .
+	docker build -t "$(IMAGE_NAME):$(IMAGE_TAG)" .
 
 .PHONY: rendered-manifest.yaml
 rendered-manifest.yaml:
